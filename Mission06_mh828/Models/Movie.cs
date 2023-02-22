@@ -13,18 +13,22 @@ namespace Mission06_mh828.Models
         [Required]
         public int MovieId { get; set; }
         [Required]
-        public string Category { get; set; }
-        [Required]
         public string Title { get; set; }
-        [Required]
-        public int Year { get; set; }
+        [Required(ErrorMessage = "The Year field is required")]
+        [Range(0, int.MaxValue, ErrorMessage = "Year must be a positive number!")]
+        public int? Year { get; set; }
         [Required]
         public string Director { get; set; }
         [Required]
         public string Rating { get; set; }
-        public bool Edited { get; set; }
+        public bool? Edited { get; set; }
         public string LentTo { get; set; } 
         [MaxLength(25)]
         public string Notes { get; set; }
+
+        // Foreign Key Relationship with Category
+        [Required]
+        public int CategoryId { get; set; }
+        public Category Category { get; set; }
     }
 }

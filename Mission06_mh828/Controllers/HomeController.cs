@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Mission06_mh828.Models;
 using System;
@@ -11,12 +12,10 @@ namespace Mission06_mh828.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
         private MovieContext _Context { get; set; }
 
-        public HomeController(ILogger<HomeController> logger, MovieContext contextName)
+        public HomeController(MovieContext contextName)
         {
-            _logger = logger;
             _Context = contextName;
         }
 
@@ -30,6 +29,8 @@ namespace Mission06_mh828.Controllers
         [HttpGet]
         public IActionResult MovieSubmission()
         {
+            ViewBag.Categories = _Context.Categories.ToList();
+
             return View();
         }
 
@@ -37,10 +38,21 @@ namespace Mission06_mh828.Controllers
         [HttpPost]
         public IActionResult MovieSubmission(Movie m)
         {
-            _Context.Add(m);
-            _Context.SaveChanges();
+            // Validation Branch if Model is Valid
+            if (ModelState.IsValid)
+            {
+                _Context.Add(m);
+                _Context.SaveChanges();
 
-            return View("Confirmation", m);
+                return View("Confirmation", m);
+            }
+            // Reroute back to page if Model is Invalid
+            else
+            {
+                ViewBag.Categories = _Context.Categories.ToList();
+                return View(m);
+            }
+            
         }
 
         // MyPodcasts Route
@@ -49,10 +61,54 @@ namespace Mission06_mh828.Controllers
             return View();
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        // Movie List Page Route
+        public IActionResult MovieList()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var movies = _Context.Movies
+                .Include(x => x.Category)
+                .OrderBy(x => x.CategoryId)
+                .ToList();
+
+            return View(movies);
+        }
+
+        // Edit Page Post Route
+        [HttpPost]
+        public IActionResult Edit(Movie m)
+        {
+            _Context.Update(m);
+            _Context.SaveChanges();
+
+            return RedirectToAction("MovieList");
+        }
+
+        // Edit Page Get Route
+        [HttpGet]
+        public IActionResult Edit(int movieid)
+        {
+            ViewBag.Categories = _Context.Categories.ToList();
+
+            var application = _Context.Movies.Single(x => x.MovieId == movieid);
+
+            return View("MovieSubmission", application);
+        }
+
+        // Delete Page Post Route
+        [HttpPost]
+        public IActionResult Delete(Movie m)
+        {
+            _Context.Movies.Remove(m);
+            _Context.SaveChanges();
+
+            return RedirectToAction("MovieList");
+        }
+
+        // Delete Page Get Route
+        [HttpGet]
+        public IActionResult Delete(int movieid)
+        {
+            var application = _Context.Movies.Single(x => x.MovieId == movieid);
+            return View(application);
         }
     }
 }
